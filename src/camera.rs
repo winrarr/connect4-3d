@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_orbit_controls::*;
+use bevy_mod_picking::PickingCameraBundle;
 
 fn setup_camera(
     mut commands: Commands,
@@ -13,7 +14,8 @@ fn setup_camera(
         ),
         ..Default::default()
     })
-    .insert(OrbitCamera::new(5., Vec3::new(1.5, 0., 1.5)));
+    .insert(OrbitCamera::new(5., Vec3::new(1.5, 0., 1.5)))
+    .insert_bundle(PickingCameraBundle::default());
 }
 
 pub struct CameraPlugin;

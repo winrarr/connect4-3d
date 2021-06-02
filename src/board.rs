@@ -1,4 +1,5 @@
 use bevy::{math::f32, prelude::*};
+use bevy_mod_picking::{PickableBundle, PickingPlugin, DebugCursorPickingPlugin};
 
 const BOARD_HEIGHT: f32 = 0.2;
 const BOARD_SIZE: f32 = 4.;
@@ -47,6 +48,11 @@ fn create_board(
     }
 }
 
+pub struct Rod {
+    pub x: f32,
+    pub y: f32,
+}
+
 fn spawn_rod(
     commands: &mut Commands,
     mesh: Handle<Mesh>,
@@ -58,13 +64,17 @@ fn spawn_rod(
         material: material,
         transform: Transform::from_xyz(position.0*SPACE+OFFSET, ROD_HEIGHT / 2 as f32, position.1*SPACE+OFFSET),
         ..Default::default()
-    });
+    })
+    .insert_bundle(PickableBundle::default())
+    .insert(Rod { x: position.0, y: position.1 });
 }
 
 pub struct BoardPlugin;
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
+            .add_plugin(PickingPlugin)
+            .add_plugin(DebugCursorPickingPlugin)
             .add_startup_system(create_board.system());
     }
 }
