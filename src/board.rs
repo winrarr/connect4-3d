@@ -48,6 +48,37 @@ fn create_board(
     }
 }
 
+#[derive(Default)]
+struct SelectedRod {
+    entity: Option<Entity>,
+}
+
+fn select_rod(
+    mouse_button_inputs: Res<Input<MouseButton>>,
+    mut selected_rod: ResMut<SelectedRod>,
+    mut selected_piece: ResMut<SelectedRod>,
+    rods_query: Query<&Rod>,
+    picking_camera_query: Query<&PickingCamera>,
+) {
+    // Only run if the left button is pressed
+    if !mouse_button_inputs.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    // Get the square under the cursor and set it as the selected
+    if let Some(picking_camera) = picking_camera_query.iter().last() {
+        if let Some((rod_entity, _intersection)) = picking_camera.intersect_top() {
+            if let Ok(_rod) = rods_query.get(rod_entity) {
+                // Mark it as selected
+                selected_rod.entity = Some(rod_entity);
+            }
+        } else {
+            // Player clicked outside the board, deselect everything
+            selected_rod.entity = None;
+        }
+    }
+}
+
 pub struct Rod {
     pub x: f32,
     pub y: f32,
@@ -78,11 +109,6 @@ fn color_rods(
             materials.base_color.clone()
         };
     }
-}
-
-#[derive(Default)]
-struct SelectedRod {
-    entity: Option<Entity>,
 }
 
 fn spawn_rod(
@@ -130,6 +156,7 @@ impl Plugin for BoardPlugin {
             .add_plugin(PickingPlugin)
             .add_plugin(DebugCursorPickingPlugin)
             .add_startup_system(create_board.system())
+            .add_system(select_rod.system())
             .add_system(color_rods.system());
     }
 }
