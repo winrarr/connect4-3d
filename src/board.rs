@@ -56,7 +56,6 @@ struct SelectedRod {
 fn select_rod(
     mouse_button_inputs: Res<Input<MouseButton>>,
     mut selected_rod: ResMut<SelectedRod>,
-    mut selected_piece: ResMut<SelectedRod>,
     rods_query: Query<&Rod>,
     picking_camera_query: Query<&PickingCamera>,
 ) {

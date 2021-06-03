@@ -6,16 +6,16 @@ fn setup_camera(
     mut commands: Commands,
 ) {
     commands
-    .spawn()
-    .insert_bundle(PerspectiveCameraBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(
-            Vec3::new(1.5, 0., 1.5),
-            Vec3::Y
-        ),
-        ..Default::default()
-    })
-    .insert(OrbitCamera::new(5., Vec3::new(1.5, 0., 1.5)))
-    .insert_bundle(PickingCameraBundle::default());
+        .spawn()
+        .insert_bundle(PerspectiveCameraBundle {
+            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(
+                Vec3::new(1.5, 0., 1.5),
+                Vec3::Y
+            ),
+            ..Default::default()
+        })
+        .insert(OrbitCamera::new(5., Vec3::new(1.5, 0., 1.5)))
+        .insert_bundle(PickingCameraBundle::default());
 }
 
 pub struct CameraPlugin;
