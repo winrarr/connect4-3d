@@ -9,6 +9,8 @@ const ROD_RADIUS: f32 = 0.07;
 const SPACE: f32 = BOARD_SIZE / 4.;
 const OFFSET: f32 = SPACE / 2.;
 
+const PIG_RADIUS: f32 = 0.1;
+
 fn create_board(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -48,14 +50,10 @@ fn create_board(
     }
 }
 
-#[derive(Default)]
-struct SelectedRod {
-    entity: Option<Entity>,
-}
-
 fn select_rod(
+    mut commands: Commands,
+    pig: Res<PigMaterialsAndMeshes>,
     mouse_button_inputs: Res<Input<MouseButton>>,
-    mut selected_rod: ResMut<SelectedRod>,
     rods_query: Query<&Rod>,
     picking_camera_query: Query<&PickingCamera>,
 ) {
@@ -67,15 +65,26 @@ fn select_rod(
     // Get the square under the cursor and set it as the selected
     if let Some(picking_camera) = picking_camera_query.iter().last() {
         if let Some((rod_entity, _intersection)) = picking_camera.intersect_top() {
-            if let Ok(_rod) = rods_query.get(rod_entity) {
+            if let Ok(rod) = rods_query.get(rod_entity) {
                 // Mark it as selected
-                selected_rod.entity = Some(rod_entity);
+                spawn_pig(&mut commands, pig.mesh.clone(), pig.material.clone(), (rod.x, rod.y, 0.0));
             }
-        } else {
-            // Player clicked outside the board, deselect everything
-            selected_rod.entity = None;
         }
     }
+}
+
+fn spawn_pig(
+    commands: &mut Commands,
+    mesh: Handle<Mesh>,
+    material: Handle<StandardMaterial>,
+    position: (f32, f32, f32)
+) {
+    commands.spawn_bundle(PbrBundle {
+        mesh,
+        material,
+        transform: Transform::from_xyz(position.0*SPACE+OFFSET,ROD_HEIGHT / 2 as f32 + BOARD_HEIGHT + position.2*PIG_RADIUS, position.1*SPACE+OFFSET),
+        ..Default::default()
+    });
 }
 
 pub struct Rod {
@@ -84,7 +93,6 @@ pub struct Rod {
 }
 
 fn color_rods(
-    selected_rod: Res<SelectedRod>,
     materials: Res<RodMaterials>,
     mut query: Query<(Entity, &Rod, &mut Handle<StandardMaterial>)>,
     picking_camera_query: Query<&PickingCamera>,
@@ -102,9 +110,7 @@ fn color_rods(
         // Change the material
         *material = if Some(entity) == top_entity {
             materials.highlight_color.clone()
-        } else if Some(entity) == selected_rod.entity {
-            materials.selected_color.clone()
-        } else {
+        }  else {
             materials.base_color.clone()
         };
     }
@@ -129,7 +135,6 @@ fn spawn_rod(
 struct RodMaterials {
     base_color: Handle<StandardMaterial>,
     highlight_color: Handle<StandardMaterial>,
-    selected_color: Handle<StandardMaterial>,
 }
 
 impl FromWorld for RodMaterials {
@@ -141,7 +146,32 @@ impl FromWorld for RodMaterials {
         RodMaterials {
             base_color: materials.add(Color::rgb_u8(130, 73, 11).into()),
             highlight_color: materials.add(Color::rgb(0.8, 0.3, 0.3).into()),
-            selected_color: materials.add(Color::rgb(0.9, 0.1, 0.1).into()),
+        }
+    }
+}
+
+struct PigMaterialsAndMeshes {
+    mesh: Handle<Mesh>,
+    material: Handle<StandardMaterial>,
+}
+
+impl FromWorld for PigMaterialsAndMeshes {
+    fn from_world(world: &mut World) -> Self {
+        let world = world.cell();
+        let mut meshes = world
+            .get_resource_mut::<Assets<Mesh>>()
+            .unwrap();
+        let mut materials = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .unwrap();
+        PigMaterialsAndMeshes {
+            mesh: meshes.add(Mesh::from(shape::Torus {
+                radius: 0.1,
+                ring_radius: 0.08,
+                subdivisions_segments: 50,
+                subdivisions_sides: 50,
+            })),
+            material: materials.add(Color::rgb_u8(0, 0, 255).into()),
         }
     }
 }
@@ -150,10 +180,9 @@ pub struct BoardPlugin;
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
-            .init_resource::<SelectedRod>()
             .init_resource::<RodMaterials>()
+            .init_resource::<PigMaterialsAndMeshes>()
             .add_plugin(PickingPlugin)
-            .add_plugin(DebugCursorPickingPlugin)
             .add_startup_system(create_board.system())
             .add_system(select_rod.system())
             .add_system(color_rods.system());
