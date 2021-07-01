@@ -3,6 +3,26 @@ use bevy_mod_picking::*;
 
 use crate::constants;
 
+enum PlayerColor {
+    Red,
+    Blue,
+}
+
+struct PlayerTurn(pub PlayerColor);
+impl Default for PlayerTurn {
+    fn default() -> Self {
+        Self(PlayerColor::Red)
+    }
+}
+impl PlayerTurn {
+    fn change(&mut self) {
+        self.0 = match self.0 {
+            PlayerColor::Red => PlayerColor::Blue,
+            PlayerColor::Blue => PlayerColor::Red,
+        }
+    }
+}
+
 fn create_board(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -44,9 +64,9 @@ fn create_board(
 
 fn select_rod(
     mut commands: Commands,
-    pig: Res<PigMaterialsAndMeshes>,
+    piece: Res<PieceMaterialsAndMeshes>,
     mouse_button_inputs: Res<Input<MouseButton>>,
-    rods_query: Query<&Rod>,
+    mut rods_query: Query<&mut Rod>,
     picking_camera_query: Query<&PickingCamera>,
 ) {
     // Only run if the left button is pressed
@@ -54,18 +74,18 @@ fn select_rod(
         return;
     }
 
-    // Get the square under the cursor and set it as the selected
+    // Add a piece to clicked rod
     if let Some(picking_camera) = picking_camera_query.iter().last() {
         if let Some((rod_entity, _intersection)) = picking_camera.intersect_top() {
-            if let Ok(rod) = rods_query.get(rod_entity) {
-                // Mark it as selected
-                spawn_pig(&mut commands, pig.mesh.clone(), pig.material.clone(), (rod.x, rod.y, 0.0));
+            if let Ok(mut rod) = rods_query.get_mut(rod_entity) {
+                spawn_piece(&mut commands, piece.mesh.clone(), piece.material.clone(), (rod.x, rod.pieces, rod.y));
+                rod.add_piece();
             }
         }
     }
 }
 
-fn spawn_pig(
+fn spawn_piece(
     commands: &mut Commands,
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
@@ -75,9 +95,10 @@ fn spawn_pig(
         mesh,
         material,
         transform: Transform::from_xyz(
-            position.0*constants::SPACE+constants::OFFSET,
-            constants::ROD_HEIGHT / 2 as f32 + constants::BOARD_HEIGHT + position.2*constants::PIG_RADIUS,
-            position.1*constants::SPACE+constants::OFFSET),
+            position.0*constants::SPACE + constants::OFFSET,
+            (2.0*position.1+1.0)*constants::PIECE_RING_RADIUS,
+            position.2*constants::SPACE + constants::OFFSET,
+        ),
         ..Default::default()
     });
 }
@@ -85,6 +106,13 @@ fn spawn_pig(
 pub struct Rod {
     pub x: f32,
     pub y: f32,
+    pub pieces: f32,
+}
+
+impl Rod {
+    fn add_piece(&mut self) {
+        self.pieces += 1.0;
+    }
 }
 
 fn color_rods(
@@ -123,11 +151,12 @@ fn spawn_rod(
         transform: Transform::from_xyz(
             position.0*constants::SPACE+constants::OFFSET,
             constants::ROD_HEIGHT / 2 as f32,
-            position.1*constants::SPACE+constants::OFFSET),
+            position.1*constants::SPACE+constants::OFFSET,
+        ),
         ..Default::default()
     })
     .insert_bundle(PickableBundle::default())
-    .insert(Rod { x: position.0, y: position.1 });
+    .insert(Rod { x: position.0, y: position.1, pieces: 0.0 });
 }
 
 struct RodMaterials {
@@ -148,12 +177,12 @@ impl FromWorld for RodMaterials {
     }
 }
 
-struct PigMaterialsAndMeshes {
+struct PieceMaterialsAndMeshes {
     mesh: Handle<Mesh>,
     material: Handle<StandardMaterial>,
 }
 
-impl FromWorld for PigMaterialsAndMeshes {
+impl FromWorld for PieceMaterialsAndMeshes {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
         let mut meshes = world
@@ -162,12 +191,12 @@ impl FromWorld for PigMaterialsAndMeshes {
         let mut materials = world
             .get_resource_mut::<Assets<StandardMaterial>>()
             .unwrap();
-        PigMaterialsAndMeshes {
+        PieceMaterialsAndMeshes {
             mesh: meshes.add(Mesh::from(shape::Torus {
-                radius: 0.1,
-                ring_radius: 0.08,
-                subdivisions_segments: 50,
-                subdivisions_sides: 50,
+                radius: constants::PIECE_RADIUS,
+                ring_radius: constants::PIECE_RING_RADIUS,
+                subdivisions_segments: constants::PIECE_SUBDIVISIONS_SEGMENTS,
+                subdivisions_sides: constants::PIECE_SUBDIVISIONS_SIDES,
             })),
             material: materials.add(Color::rgb_u8(0, 0, 255).into()),
         }
@@ -179,7 +208,7 @@ impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
             .init_resource::<RodMaterials>()
-            .init_resource::<PigMaterialsAndMeshes>()
+            .init_resource::<PieceMaterialsAndMeshes>()
             .add_plugin(PickingPlugin)
             .add_startup_system(create_board.system())
             .add_system(select_rod.system())
