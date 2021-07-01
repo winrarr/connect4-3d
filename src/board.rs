@@ -1,7 +1,7 @@
 use bevy::{math::f32, prelude::*};
 use bevy_mod_picking::*;
 
-use crate::constants::*;
+use crate::constants;
 
 fn create_board(
     mut commands: Commands,
@@ -12,11 +12,11 @@ fn create_board(
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Box {
             min_x: 0.,
-            max_x: BOARD_SIZE,
-            min_y: -BOARD_HEIGHT,
+            max_x: constants::BOARD_SIZE,
+            min_y: -constants::BOARD_HEIGHT,
             max_y: 0.,
             min_z: 0.,
-            max_z: BOARD_SIZE,
+            max_z: constants::BOARD_SIZE,
         })),
         material: materials.add(Color::rgb_u8(130, 73, 11).into()),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
@@ -25,7 +25,7 @@ fn create_board(
 
     // Rods
     let rod_mesh: Handle<Mesh> = meshes.add(Mesh::from(shape::Capsule {
-        radius: ROD_RADIUS,
+        radius: constants::ROD_RADIUS,
         rings: 0,
         depth: 0.5,
         latitudes: 30,
@@ -74,7 +74,10 @@ fn spawn_pig(
     commands.spawn_bundle(PbrBundle {
         mesh,
         material,
-        transform: Transform::from_xyz(position.0*SPACE+OFFSET,ROD_HEIGHT / 2 as f32 + BOARD_HEIGHT + position.2*PIG_RADIUS, position.1*SPACE+OFFSET),
+        transform: Transform::from_xyz(
+            position.0*constants::SPACE+constants::OFFSET,
+            constants::ROD_HEIGHT / 2 as f32 + constants::BOARD_HEIGHT + position.2*constants::PIG_RADIUS,
+            position.1*constants::SPACE+constants::OFFSET),
         ..Default::default()
     });
 }
@@ -117,7 +120,10 @@ fn spawn_rod(
     commands.spawn_bundle(PbrBundle {
         mesh: mesh,
         material: material,
-        transform: Transform::from_xyz(position.0*SPACE+OFFSET, ROD_HEIGHT / 2 as f32, position.1*SPACE+OFFSET),
+        transform: Transform::from_xyz(
+            position.0*constants::SPACE+constants::OFFSET,
+            constants::ROD_HEIGHT / 2 as f32,
+            position.1*constants::SPACE+constants::OFFSET),
         ..Default::default()
     })
     .insert_bundle(PickableBundle::default())
