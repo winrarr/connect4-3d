@@ -1,15 +1,7 @@
 use bevy::{math::f32, prelude::*};
 use bevy_mod_picking::*;
 
-const BOARD_HEIGHT: f32 = 0.2;
-const BOARD_SIZE: f32 = 4.;
-
-const ROD_HEIGHT: f32 = 0.5;
-const ROD_RADIUS: f32 = 0.07;
-const SPACE: f32 = BOARD_SIZE / 4.;
-const OFFSET: f32 = SPACE / 2.;
-
-const PIG_RADIUS: f32 = 0.1;
+use crate::constants::*;
 
 fn create_board(
     mut commands: Commands,

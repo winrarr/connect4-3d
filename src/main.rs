@@ -6,6 +6,8 @@ use board::*;
 mod camera;
 use camera::*;
 
+mod constants;
+
 fn main() {
     App::build()
         .insert_resource(Msaa { samples: 4 })
