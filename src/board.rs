@@ -3,9 +3,17 @@ use bevy_mod_picking::*;
 
 use crate::constants;
 
-enum PlayerColor {
+#[derive(Clone, Copy)]
+pub enum PlayerColor {
     Red,
     Blue,
+}
+
+struct Board(pub [[Vec<PlayerColor>; 4]; 4]);
+impl Default for Board {
+    fn default() -> Self {
+        Self(Default::default())
+    }
 }
 
 struct PlayerTurn(pub PlayerColor);
@@ -23,11 +31,19 @@ impl PlayerTurn {
     }
 }
 
+struct Winner(pub Option<PlayerColor>);
+impl Default for Winner {
+    fn default() -> Self {
+        Self(None)
+    }
+}
+
 fn create_board(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    
     // Base
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Box {
@@ -47,7 +63,7 @@ fn create_board(
     let rod_mesh: Handle<Mesh> = meshes.add(Mesh::from(shape::Capsule {
         radius: constants::ROD_RADIUS,
         rings: 0,
-        depth: 0.5,
+        depth: constants::ROD_HEIGHT,
         latitudes: 30,
         longitudes: 50,
         uv_profile: shape::CapsuleUvProfile::Uniform,
@@ -66,7 +82,9 @@ fn select_rod(
     mut commands: Commands,
     piece: Res<PieceMaterialsAndMeshes>,
     mouse_button_inputs: Res<Input<MouseButton>>,
-    mut rods_query: Query<&mut Rod>,
+    mut rods_query: Query<&Rod>,
+    mut turn: ResMut<PlayerTurn>,
+    mut board: ResMut<Board>,
     picking_camera_query: Query<&PickingCamera>,
 ) {
     // Only run if the left button is pressed
@@ -77,9 +95,20 @@ fn select_rod(
     // Add a piece to clicked rod
     if let Some(picking_camera) = picking_camera_query.iter().last() {
         if let Some((rod_entity, _intersection)) = picking_camera.intersect_top() {
-            if let Ok(mut rod) = rods_query.get_mut(rod_entity) {
-                spawn_piece(&mut commands, piece.mesh.clone(), piece.material.clone(), (rod.x, rod.pieces, rod.y));
-                rod.add_piece();
+            if let Ok(rod) = rods_query.get_mut(rod_entity) {
+                let pieces = &mut board.0[rod.x as usize][rod.y as usize];
+                spawn_piece(
+                    &mut commands,
+                    piece.mesh.clone(), 
+                    match turn.0 {
+                        PlayerColor::Red => piece.red_material.clone(),
+                        PlayerColor::Blue => piece.blue_material.clone(),
+                    }, 
+                    (rod.x, pieces.len() as f32, rod.y)
+                );
+                pieces.push(turn.0);
+                crate::winner::check_winner(&board.0);
+                turn.change();
             }
         }
     }
@@ -106,13 +135,6 @@ fn spawn_piece(
 pub struct Rod {
     pub x: f32,
     pub y: f32,
-    pub pieces: f32,
-}
-
-impl Rod {
-    fn add_piece(&mut self) {
-        self.pieces += 1.0;
-    }
 }
 
 fn color_rods(
@@ -146,17 +168,17 @@ fn spawn_rod(
     position: (f32, f32)
 ) {
     commands.spawn_bundle(PbrBundle {
-        mesh: mesh,
-        material: material,
+        mesh,
+        material,
         transform: Transform::from_xyz(
             position.0*constants::SPACE+constants::OFFSET,
-            constants::ROD_HEIGHT / 2 as f32,
+            constants::ROD_HEIGHT / 2.0,
             position.1*constants::SPACE+constants::OFFSET,
         ),
         ..Default::default()
     })
     .insert_bundle(PickableBundle::default())
-    .insert(Rod { x: position.0, y: position.1, pieces: 0.0 });
+    .insert(Rod { x: position.0, y: position.1 });
 }
 
 struct RodMaterials {
@@ -179,7 +201,8 @@ impl FromWorld for RodMaterials {
 
 struct PieceMaterialsAndMeshes {
     mesh: Handle<Mesh>,
-    material: Handle<StandardMaterial>,
+    red_material: Handle<StandardMaterial>,
+    blue_material: Handle<StandardMaterial>,
 }
 
 impl FromWorld for PieceMaterialsAndMeshes {
@@ -198,7 +221,8 @@ impl FromWorld for PieceMaterialsAndMeshes {
                 subdivisions_segments: constants::PIECE_SUBDIVISIONS_SEGMENTS,
                 subdivisions_sides: constants::PIECE_SUBDIVISIONS_SIDES,
             })),
-            material: materials.add(Color::rgb_u8(0, 0, 255).into()),
+            red_material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
+            blue_material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
         }
     }
 }
@@ -209,6 +233,9 @@ impl Plugin for BoardPlugin {
         app
             .init_resource::<RodMaterials>()
             .init_resource::<PieceMaterialsAndMeshes>()
+            .init_resource::<PlayerTurn>()
+            .init_resource::<Board>()
+            .init_resource::<Winner>()
             .add_plugin(PickingPlugin)
             .add_startup_system(create_board.system())
             .add_system(select_rod.system())

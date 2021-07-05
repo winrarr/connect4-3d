@@ -6,6 +6,8 @@ use board::*;
 mod camera;
 use camera::*;
 
+mod winner;
+
 mod constants;
 
 fn main() {
@@ -21,9 +23,27 @@ fn main() {
 fn setup(
     mut commands: Commands,
 ) {
+    let dist: f32 = 6.0;
+
     // light
     commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        transform: Transform::from_xyz(constants::BOARD_SIZE/2.0, 8.0, constants::BOARD_SIZE/2.0),
+        ..Default::default()
+    });
+    commands.spawn_bundle(LightBundle {
+        transform: Transform::from_xyz(-dist, 3.0, -dist),
+        ..Default::default()
+    });
+    commands.spawn_bundle(LightBundle {
+        transform: Transform::from_xyz(-dist, 3.0, constants::BOARD_SIZE+dist),
+        ..Default::default()
+    });
+    commands.spawn_bundle(LightBundle {
+        transform: Transform::from_xyz(constants::BOARD_SIZE+dist, 3.0, -dist),
+        ..Default::default()
+    });
+    commands.spawn_bundle(LightBundle {
+        transform: Transform::from_xyz(constants::BOARD_SIZE+dist, 3.0, constants::BOARD_SIZE+dist),
         ..Default::default()
     });
 }
