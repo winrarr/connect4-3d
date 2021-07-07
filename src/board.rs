@@ -135,39 +135,35 @@ fn color_rods(
     for (entity, _, mut material) in query.iter_mut() {
         // Change the material
         *material = if Some(entity) == top_entity {
-            rod_hightlight_material.material.clone()
+            rod_hightlight_material.0.clone()
         }  else {
-            rod_base_material.material.clone()
+            rod_base_material.0.clone()
         };
     }
 }
 
-struct RodBaseMaterial {
-    material: Handle<StandardMaterial>,
-}
+struct RodBaseMaterial(Handle<StandardMaterial>);
 impl FromWorld for RodBaseMaterial {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
         let mut materials = world
             .get_resource_mut::<Assets<StandardMaterial>>()
             .unwrap();
-            RodBaseMaterial {
-            material: materials.add(Color::rgb_u8(189, 76, 0).into()),
+        RodBaseMaterial {
+            0: materials.add(Color::rgb_u8(189, 76, 0).into()),
         }
     }
 }
 
-struct RodHighlightMaterial {
-    material: Handle<StandardMaterial>,
-}
+struct RodHighlightMaterial(Handle<StandardMaterial>);
 impl FromWorld for RodHighlightMaterial {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
         let mut materials = world
             .get_resource_mut::<Assets<StandardMaterial>>()
             .unwrap();
-            RodHighlightMaterial {
-            material: materials.add(Color::rgb_u8(184, 92, 31).into()),
+        RodHighlightMaterial {
+            0: materials.add(Color::rgb_u8(184, 92, 31).into()),
         }
     }
 }
