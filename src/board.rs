@@ -3,7 +3,7 @@ use bevy_mod_picking::*;
 
 use crate::constants;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum PlayerColor {
     Red,
     Blue,
@@ -97,6 +97,7 @@ fn select_rod(
         if let Some((rod_entity, _intersection)) = picking_camera.intersect_top() {
             if let Ok(rod) = rods_query.get_mut(rod_entity) {
                 let pieces = &mut board.0[rod.x as usize][rod.y as usize];
+                let len = pieces.len() as f32;
                 spawn_piece(
                     &mut commands,
                     piece.mesh.clone(), 
@@ -104,10 +105,10 @@ fn select_rod(
                         PlayerColor::Red => piece.red_material.clone(),
                         PlayerColor::Blue => piece.blue_material.clone(),
                     }, 
-                    (rod.x, pieces.len() as f32, rod.y)
+                    (rod.x, len, rod.y)
                 );
                 pieces.push(turn.0);
-                crate::winner::check_winner(&board.0);
+                crate::winner::check_winner(&board.0, (rod.x as i8, rod.y as i8, len as i8));
                 turn.change();
             }
         }
