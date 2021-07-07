@@ -45,7 +45,7 @@ fn create_board(
     rod_base_material: Res<BoardMaterial>,
 ) {
     
-    // Base
+    // Base board
     commands.spawn_bundle(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Box {
             min_x: 0.,
@@ -188,6 +188,7 @@ fn select_rod(
             if let Ok(rod) = rods_query.get_mut(rod_entity) {
                 let pieces = &mut board.0[rod.x as usize][rod.y as usize];
                 let len = pieces.len() as f32;
+                if len >= 4.0 { return; }
                 spawn_piece(
                     &mut commands,
                     piece.mesh.clone(), 
