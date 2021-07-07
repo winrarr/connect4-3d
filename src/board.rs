@@ -41,7 +41,8 @@ impl Default for Winner {
 fn create_board(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    board_material: Res<BoardMaterial>,
+    rod_base_material: Res<BoardMaterial>,
 ) {
     
     // Base
@@ -54,7 +55,7 @@ fn create_board(
             min_z: 0.,
             max_z: constants::BOARD_SIZE,
         })),
-        material: materials.add(Color::rgb_u8(130, 73, 11).into()),
+        material: board_material.material.clone(),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..Default::default()
     });
@@ -64,16 +65,109 @@ fn create_board(
         radius: constants::ROD_RADIUS,
         rings: 0,
         depth: constants::ROD_HEIGHT,
-        latitudes: 30,
-        longitudes: 50,
+        latitudes: 10,
+        longitudes: 10,
         uv_profile: shape::CapsuleUvProfile::Uniform,
     }));
 
-    let rod_material: Handle<StandardMaterial> = materials.add(Color::rgb_u8(130, 73, 11).into());
-
     for x in 0u8..4 {
         for y in 0u8..4 {
-            spawn_rod(&mut commands, rod_mesh.clone(), rod_material.clone(), (x as f32, y as f32));
+            spawn_rod(&mut commands, rod_mesh.clone(), rod_base_material.material.clone(), (x as f32, y as f32));
+        }
+    }
+}
+
+pub struct Rod {
+    pub x: f32,
+    pub y: f32,
+}
+
+fn spawn_rod(
+    commands: &mut Commands,
+    mesh: Handle<Mesh>,
+    material: Handle<StandardMaterial>,
+    position: (f32, f32)
+) {
+    commands.spawn_bundle(PbrBundle {
+        mesh,
+        material,
+        transform: Transform::from_xyz(
+            position.0*constants::SPACE+constants::OFFSET,
+            constants::ROD_HEIGHT / 2.0,
+            position.1*constants::SPACE+constants::OFFSET,
+        ),
+        ..Default::default()
+    })
+    .insert_bundle(PickableBundle::default())
+    .insert(Rod { x: position.0, y: position.1 });
+}
+
+struct BoardMaterial {
+    material: Handle<StandardMaterial>,
+}
+impl FromWorld for BoardMaterial {
+    fn from_world(world: &mut World) -> Self {
+        let world = world.cell();
+        let mut materials = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .unwrap();
+        BoardMaterial {
+            material: materials.add(Color::rgb_u8(92, 37, 0).into()),
+        }
+    }
+}
+
+fn color_rods(
+    rod_base_material: Res<RodBaseMaterial>,
+    rod_hightlight_material: Res<RodHighlightMaterial>,
+    mut query: Query<(Entity, &Rod, &mut Handle<StandardMaterial>)>,
+    picking_camera_query: Query<&PickingCamera>,
+) {
+    // Get entity under the cursor, if there is one
+    let top_entity = match picking_camera_query.iter().last() {
+        Some(picking_camera) => match picking_camera.intersect_top() {
+            Some((entity, _intersection)) => Some(entity),
+            None => None,
+        },
+        None => None,
+    };
+
+    for (entity, _, mut material) in query.iter_mut() {
+        // Change the material
+        *material = if Some(entity) == top_entity {
+            rod_hightlight_material.material.clone()
+        }  else {
+            rod_base_material.material.clone()
+        };
+    }
+}
+
+struct RodBaseMaterial {
+    material: Handle<StandardMaterial>,
+}
+impl FromWorld for RodBaseMaterial {
+    fn from_world(world: &mut World) -> Self {
+        let world = world.cell();
+        let mut materials = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .unwrap();
+            RodBaseMaterial {
+            material: materials.add(Color::rgb_u8(189, 76, 0).into()),
+        }
+    }
+}
+
+struct RodHighlightMaterial {
+    material: Handle<StandardMaterial>,
+}
+impl FromWorld for RodHighlightMaterial {
+    fn from_world(world: &mut World) -> Self {
+        let world = world.cell();
+        let mut materials = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .unwrap();
+            RodHighlightMaterial {
+            material: materials.add(Color::rgb_u8(184, 92, 31).into()),
         }
     }
 }
@@ -133,79 +227,11 @@ fn spawn_piece(
     });
 }
 
-pub struct Rod {
-    pub x: f32,
-    pub y: f32,
-}
-
-fn color_rods(
-    materials: Res<RodMaterials>,
-    mut query: Query<(Entity, &Rod, &mut Handle<StandardMaterial>)>,
-    picking_camera_query: Query<&PickingCamera>,
-) {
-    // Get entity under the cursor, if there is one
-    let top_entity = match picking_camera_query.iter().last() {
-        Some(picking_camera) => match picking_camera.intersect_top() {
-            Some((entity, _intersection)) => Some(entity),
-            None => None,
-        },
-        None => None,
-    };
-
-    for (entity, _, mut material) in query.iter_mut() {
-        // Change the material
-        *material = if Some(entity) == top_entity {
-            materials.highlight_color.clone()
-        }  else {
-            materials.base_color.clone()
-        };
-    }
-}
-
-fn spawn_rod(
-    commands: &mut Commands,
-    mesh: Handle<Mesh>,
-    material: Handle<StandardMaterial>,
-    position: (f32, f32)
-) {
-    commands.spawn_bundle(PbrBundle {
-        mesh,
-        material,
-        transform: Transform::from_xyz(
-            position.0*constants::SPACE+constants::OFFSET,
-            constants::ROD_HEIGHT / 2.0,
-            position.1*constants::SPACE+constants::OFFSET,
-        ),
-        ..Default::default()
-    })
-    .insert_bundle(PickableBundle::default())
-    .insert(Rod { x: position.0, y: position.1 });
-}
-
-struct RodMaterials {
-    base_color: Handle<StandardMaterial>,
-    highlight_color: Handle<StandardMaterial>,
-}
-
-impl FromWorld for RodMaterials {
-    fn from_world(world: &mut World) -> Self {
-        let world = world.cell();
-        let mut materials = world
-            .get_resource_mut::<Assets<StandardMaterial>>()
-            .unwrap();
-        RodMaterials {
-            base_color: materials.add(Color::rgb_u8(130, 73, 11).into()),
-            highlight_color: materials.add(Color::rgb(0.8, 0.3, 0.3).into()),
-        }
-    }
-}
-
 struct PieceMaterialsAndMeshes {
     mesh: Handle<Mesh>,
     red_material: Handle<StandardMaterial>,
     blue_material: Handle<StandardMaterial>,
 }
-
 impl FromWorld for PieceMaterialsAndMeshes {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
@@ -232,11 +258,13 @@ pub struct BoardPlugin;
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app
-            .init_resource::<RodMaterials>()
-            .init_resource::<PieceMaterialsAndMeshes>()
-            .init_resource::<PlayerTurn>()
             .init_resource::<Board>()
+            .init_resource::<PlayerTurn>()
             .init_resource::<Winner>()
+            .init_resource::<BoardMaterial>()
+            .init_resource::<RodBaseMaterial>()
+            .init_resource::<RodHighlightMaterial>()
+            .init_resource::<PieceMaterialsAndMeshes>()
             .add_plugin(PickingPlugin)
             .add_startup_system(create_board.system())
             .add_system(select_rod.system())
