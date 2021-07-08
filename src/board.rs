@@ -112,7 +112,7 @@ impl FromWorld for BoardMaterial {
             .get_resource_mut::<Assets<StandardMaterial>>()
             .unwrap();
         BoardMaterial {
-            material: materials.add(Color::rgb_u8(92, 37, 0).into()),
+            material: materials.add(Color::rgb_u8(135, 48, 0).into()),
         }
     }
 }
@@ -245,8 +245,16 @@ impl FromWorld for PieceMaterialsAndMeshes {
                 subdivisions_segments: constants::PIECE_SUBDIVISIONS_SEGMENTS,
                 subdivisions_sides: constants::PIECE_SUBDIVISIONS_SIDES,
             })),
-            red_material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-            blue_material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
+            red_material: materials.add(bevy::prelude::StandardMaterial {
+                base_color: Color::rgb(1.0, 0.0, 0.0),
+                unlit: true,
+                ..Default::default()
+            }),
+            blue_material: materials.add(bevy::prelude::StandardMaterial {
+                base_color: Color::rgb(0.0, 0.0, 1.0),
+                unlit: true,
+                ..Default::default()
+            }),
         }
     }
 }
