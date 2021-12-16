@@ -14,17 +14,21 @@ mod constants;
 mod rpc;
 mod winner;
 
+use local_ip_address::local_ip;
+
 fn main() {
-    println!("hej1");
+    game();
+}
 
-    thread::spawn(|| {
-        server::start();
+fn server_client() {
+    let addr = (local_ip().unwrap(), 3000);
+
+    thread::spawn(move || {
+        server::start(addr).unwrap();
     });
-    println!("hej2");
 
-    client::run();
+    client::run(addr).unwrap();
     thread::sleep(time::Duration::from_millis(1000));
-    println!("hej3");
 }
 
 fn game() {
@@ -36,7 +40,14 @@ fn game() {
         .add_plugin(CameraPlugin)
         .add_plugin(BoardPlugin)
         .add_startup_system(setup_lights.system())
+        .add_state(AppState::Menu)
         .run();
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+enum AppState {
+    Menu,
+    InGame,
 }
 
 fn setup() {
