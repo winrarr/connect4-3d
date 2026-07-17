@@ -51,4 +51,5 @@ Keep human onboarding and play instructions in `README.md`. Keep executable
 commands in the `justfile`, and have CI call those same recipes. Put durable
 agent operating rules here, implementation details in code/tests, and record
 only real future outcomes or consequential decisions in dedicated documents
-when they arise.
+when they arise. Planned outcomes belong in [backlog.md](backlog.md); do not
+turn speculative ideas into backlog items.
