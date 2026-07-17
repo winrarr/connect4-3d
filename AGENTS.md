@@ -28,15 +28,16 @@ may still need a TURN relay in the future.
 
 ## Commands and verification
 
-Use the Make targets as the canonical local command interface:
+Use the `just` recipes as the canonical local command interface. Run `just`
+without arguments to list them:
 
 ```text
-make run
-make fmt-check
-make test
-make lint
-make build
-make verify
+just run
+just fmt-check
+just test
+just lint
+just build
+just verify
 ```
 
 `make verify` runs formatting checks, all tests, Clippy with warnings denied,
@@ -47,7 +48,7 @@ two real routers.
 ## Maintenance
 
 Keep human onboarding and play instructions in `README.md`. Keep executable
-commands in the `Makefile`, and have CI call those same targets. Put durable
+commands in the `justfile`, and have CI call those same recipes. Put durable
 agent operating rules here, implementation details in code/tests, and record
 only real future outcomes or consequential decisions in dedicated documents
 when they arise.

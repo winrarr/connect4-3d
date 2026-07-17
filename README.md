@@ -3,8 +3,8 @@
 A 4×4×4 Connect 4 game built with Bevy. It can be played locally or directly
 between two players over UDP using STUN-assisted hole punching.
 
-Requires a stable Rust toolchain and Cargo. GNU Make is used for the canonical
-verification commands.
+Requires a stable Rust toolchain, Cargo, and [just](https://github.com/casey/just).
+`just` is used for the canonical verification commands.
 
 ## Local play
 
@@ -46,10 +46,11 @@ would need a relay service.
 ## Development verification
 
 ```text
-make verify
+just verify
 ```
 
-The individual checks are `make fmt-check`, `make test`, `make lint`, and
-`make build`. CI runs the same `make verify` target.
+The individual checks are `just fmt-check`, `just test`, `just lint`, and
+`just build`. Run `just` without arguments to list all recipes. CI runs the
+same `just verify` recipe.
 
 Repository operating instructions for coding agents are in [AGENTS.md](AGENTS.md).

@@ -36,8 +36,11 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Install just
+        uses: taiki-e/install-action@just
+
       - name: Cache Rust artifacts
         uses: Swatinem/rust-cache@v2
 
       - name: Verify project
-        run: make verify
+        run: just verify
