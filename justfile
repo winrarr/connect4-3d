@@ -11,7 +11,7 @@ test:
     cargo test --all-targets
 
 lint:
-    cargo clippy --all-targets -- -D warnings
+    cargo clippy --all-targets --no-deps -- -D warnings
 
 build:
     cargo build --release
