@@ -20,6 +20,3 @@ bevy = { version = "0.19", default-features = false, features = [
 tokio = { version = "1.32", features = ["rt", "sync", "time"] }
 util = { package = "webrtc-util", version = "0.17.1", features = ["conn"] }
 webrtc-ice = "0.17.1"
-
-[profile.dev.package."*"]
-opt-level = 3
