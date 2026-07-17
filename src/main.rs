@@ -6,46 +6,37 @@ use board::*;
 mod camera;
 use camera::*;
 
+mod network;
+use network::*;
+
 mod winner;
 
 mod constants;
 
 fn main() {
-    setup();
+    let network_mode = NetworkMode::from_args();
 
-    App::build()
-        .insert_resource(Msaa { samples: 4 })
+    App::new()
+        .insert_resource(network_mode)
         .add_plugins(DefaultPlugins)
-        .add_plugin(CameraPlugin)
-        .add_plugin(BoardPlugin)
-        .add_startup_system(setup_lights.system())
+        .add_plugins((NetworkPlugin, CameraPlugin, BoardPlugin))
+        .add_systems(Startup, setup_lights)
         .run();
 }
 
-fn setup() {
-    std::env::set_var("BEVY_WGPU_BACKEND", "vulkan")
-}
-
-fn setup_lights(
-    mut commands: Commands,
-) {
+fn setup_lights(mut commands: Commands) {
     let dist: f32 = 6.0;
 
-    // light
-    commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(-dist, 3.0, -dist),
-        ..Default::default()
-    });
-    commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(-dist, 3.0, constants::BOARD_SIZE+dist),
-        ..Default::default()
-    });
-    commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(constants::BOARD_SIZE+dist, 3.0, -dist),
-        ..Default::default()
-    });
-    commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(constants::BOARD_SIZE+dist, 3.0, constants::BOARD_SIZE+dist),
-        ..Default::default()
-    });
+    for position in [
+        Vec3::new(-dist, 3.0, -dist),
+        Vec3::new(-dist, 3.0, constants::BOARD_SIZE + dist),
+        Vec3::new(constants::BOARD_SIZE + dist, 3.0, -dist),
+        Vec3::new(
+            constants::BOARD_SIZE + dist,
+            3.0,
+            constants::BOARD_SIZE + dist,
+        ),
+    ] {
+        commands.spawn((PointLight::default(), Transform::from_translation(position)));
+    }
 }

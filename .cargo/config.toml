@@ -1,0 +1,10 @@
+# Fast linker configuration for native development. This works on stable Rust.
+
+[target.x86_64-unknown-linux-gnu]
+linker = "cc"
+
+[target.x86_64-apple-darwin]
+rustflags = []
+
+[target.x86_64-pc-windows-msvc]
+rustflags = []
