@@ -4,7 +4,21 @@ A 4×4×4 Connect 4 game built with Bevy. It can be played locally or directly
 between two players over UDP using STUN-assisted hole punching.
 
 Requires a stable Rust toolchain, Cargo, and [just](https://github.com/casey/just).
-`just` is used for the canonical verification commands.
+Install `just` with your platform package manager:
+
+```text
+# Ubuntu 24.04 / Debian 13
+sudo apt install just
+
+# macOS
+brew install just
+
+# Windows
+winget install --id Casey.Just --exact
+```
+
+`just` is used for the canonical verification commands. Building the game still
+requires Rust and Cargo.
 
 ## Local play
 
