@@ -40,10 +40,10 @@ just build
 just verify
 ```
 
-`make verify` runs formatting checks, all tests, Clippy with warnings denied,
-and the release build. Online play is exercised manually with two devices on
-separate networks; local and virtual ICE checks do not prove traversal through
-two real routers.
+`just verify` runs formatting checks, all tests, and Clippy with warnings
+denied. `just build` performs the optional release build separately. Online
+play is exercised manually with two devices on separate networks; local and
+virtual ICE checks do not prove traversal through two real routers.
 
 ## Maintenance
 

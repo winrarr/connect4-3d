@@ -64,7 +64,8 @@ just verify
 ```
 
 The individual checks are `just fmt-check`, `just test`, `just lint`, and
-`just build`. Run `just` without arguments to list all recipes. CI runs the
-same `just verify` recipe.
+`just build`. The release build is kept as an explicit recipe because it is
+slower and is not needed for the fast verification gate. Run `just` without
+arguments to list all recipes. CI runs the same `just verify` recipe.
 
 Repository operating instructions for coding agents are in [AGENTS.md](AGENTS.md).

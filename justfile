@@ -16,4 +16,4 @@ lint:
 build:
     cargo build --release
 
-verify: fmt-check test lint build
+verify: fmt-check test lint
