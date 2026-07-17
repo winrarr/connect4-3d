@@ -1,75 +1,100 @@
 use crate::board::PlayerColor;
 
 const DIRECTIONS: [(i8, i8, i8); 13] = [
-    (0,0,1),
-    (0,1,-1),
-    (0,1,0),
-    (0,1,1),
-    (1,-1,-1),
-    (1,-1,0),
-    (1,-1,1),
-    (1,0,-1),
-    (1,0,0),
-    (1,0,1),
-    (1,1,-1),
-    (1,1,0),
-    (1,1,1),
+    (0, 0, 1),
+    (0, 1, -1),
+    (0, 1, 0),
+    (0, 1, 1),
+    (1, -1, -1),
+    (1, -1, 0),
+    (1, -1, 1),
+    (1, 0, -1),
+    (1, 0, 0),
+    (1, 0, 1),
+    (1, 1, -1),
+    (1, 1, 0),
+    (1, 1, 1),
 ];
 
-pub fn check_winner(board: &[[Vec<PlayerColor>; 4]; 4], last: (i8, i8, i8)) {
+pub fn check_winner(
+    board: &[[Vec<PlayerColor>; 4]; 4],
+    last: (usize, usize, usize),
+) -> Option<PlayerColor> {
+    let color = *board[last.0][last.1].get(last.2)?;
+
     for direction in DIRECTIONS {
-        let mut num = 1;
-        let mut point = last;
-        let color = board[point.0 as usize][point.1 as usize][point.2 as usize];
+        let mut count = 1;
+        count += count_in_direction(board, last, direction, color);
+        count += count_in_direction(board, last, negate(direction), color);
 
-        loop {
-            point.0 += direction.0;
-            if point.0 < 0 || point.0 > 3 { break; }
-            point.1 += direction.1;
-            if point.1 < 0 || point.1 > 3 { break; }
-            point.2 += direction.2;
+        if count >= 4 {
+            return Some(color);
+        }
+    }
 
-            let rod = &board[point.0 as usize][point.1 as usize];
+    None
+}
 
-            if let Some(player) = rod.get(point.2 as usize) {
-                if *player == color {
-                    num += 1;
-                    continue;
-                }
-            }
+fn count_in_direction(
+    board: &[[Vec<PlayerColor>; 4]; 4],
+    start: (usize, usize, usize),
+    direction: (i8, i8, i8),
+    color: PlayerColor,
+) -> usize {
+    let mut point = (start.0 as i8, start.1 as i8, start.2 as i8);
+    let mut count = 0;
 
+    loop {
+        point.0 += direction.0;
+        point.1 += direction.1;
+        point.2 += direction.2;
+
+        if !(0..4).contains(&point.0) || !(0..4).contains(&point.1) || !(0..4).contains(&point.2) {
             break;
         }
 
-        let mut point = last;
+        let Some(&next_color) = board[point.0 as usize][point.1 as usize].get(point.2 as usize)
+        else {
+            break;
+        };
 
-        loop {
-            point.0 -= direction.0;
-            if point.0 < 0 || point.0 > 3 { break; }
-            point.1 -= direction.1;
-            if point.1 < 0 || point.1 > 3 { break; }
-            point.2 -= direction.2;
-
-            let rod = &board[point.0 as usize][point.1 as usize];
-
-            if let Some(player) = rod.get(point.2 as usize) {
-                if *player == color {
-                    num += 1;
-                    continue;
-                }
-            }
-
+        if next_color != color {
             break;
         }
 
-        if num >= 4 {
-            println!(
-                "{} wins!",
-                match color {
-                    PlayerColor::Red => "Red",
-                    PlayerColor::Blue => "Blue",
-                },
-            );
-        }
+        count += 1;
+    }
+
+    count
+}
+
+fn negate(direction: (i8, i8, i8)) -> (i8, i8, i8) {
+    (-direction.0, -direction.1, -direction.2)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn empty_board() -> [[Vec<PlayerColor>; 4]; 4] {
+        Default::default()
+    }
+
+    #[test]
+    fn detects_a_vertical_four() {
+        let mut board = empty_board();
+        board[1][2] = vec![PlayerColor::Red; 4];
+
+        assert_eq!(check_winner(&board, (1, 2, 3)), Some(PlayerColor::Red));
+    }
+
+    #[test]
+    fn does_not_count_disconnected_pieces() {
+        let mut board = empty_board();
+        board[0][0] = vec![PlayerColor::Blue, PlayerColor::Blue];
+        board[1][0] = vec![PlayerColor::Blue];
+        board[2][0] = vec![PlayerColor::Blue];
+
+        assert_eq!(check_winner(&board, (2, 0, 0)), None);
     }
 }
